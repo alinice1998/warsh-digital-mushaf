@@ -12,30 +12,18 @@
 ## التقنيات المستخدمة (Tech Stack)
 
 - HTML, CSS, JavaScript (Vanilla JS)
-- Vite (كمشغل ومحزم للمشروع)
-- Tailwind CSS (عبر إعدادات PostCSS)
+- Tailwind CSS (عبر CDN)
 
 ## طريقة التشغيل (Setup & Installation)
 
+هذا المشروع تطبيق ويب ثابت (Static Web App)، ويعمل مباشرة بدون الحاجة لأي بيئة عمل أو تثبيت حزم.
+
 1. قم بتحميل المشروع:
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/alinice1998/warsh-digital-mushaf.git
    ```
 
-2. قم بتثبيت الحزم المطلوبة:
-   ```bash
-   npm install
-   ```
-
-3. قم بتشغيل الخادم المحلي للتطوير:
-   ```bash
-   npm run dev
-   ```
-
-4. لعمل نسخة الإنتاج:
-   ```bash
-   npm run build
-   ```
+2. بكل بساطة، قم بفتح ملف `index.html` في متصفحك للبدء، أو قم برفعه على أي خادم استضافة ثابت (مثل GitHub Pages، Vercel، أو XAMPP).
 
 ## ملاحظات
 يعتمد هذا المشروع على مزامنة دقيقة للتلاوات وضبط الفروقات بين القراءات المختلفة لضمان تجربة استماع دقيقة ومتوافقة تماماً مع المصحف المكتوب برواية ورش.
