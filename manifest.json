@@ -1,0 +1,17 @@
+{
+  "name": "مصحف ورش الرقمي",
+  "short_name": "مصحف ورش",
+  "description": "مصحف القرآن الكريم برواية ورش عن نافع بشكل تفاعلي",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffcf5",
+  "theme_color": "#fffcf5",
+  "icons": [
+    {
+      "src": "pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

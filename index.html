@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>مصحف ورش الرقمي</title>
+    <meta name="description" content="تطبيق مصحف القرآن الكريم برواية ورش عن نافع بشكل تفاعلي وحديث مع إمكانية الاستماع والتفاعل مع الآيات">
+
+    <!-- Tailwind Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1612">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        quran: {
+                            paper: '#fffcf5',
+                            paperDark: '#1a1612',
+                            highlight: '#d4a853',
+                            highlightMuted: '#f5e6a3',
+                            border: '#e2d2b4',
+                            borderDark: '#3d3428',
+                            gold: '#c9a84c',
+                            goldLight: '#f0d98d',
+                            accent: '#8b6914',
+                            surface: '#f7f0e3',
+                            surfaceDark: '#252019',
+                        }
+                    },
+                    fontFamily: {
+                        arabic: ['Amiri', 'Noto Naskh Arabic', 'serif'],
+                        naskh: ['Noto Naskh Arabic', 'Amiri', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --quran-paper: #fffdf7;
+            --quran-highlight: #c9a84c;
+            --quran-highlight-muted: #fdf3d4;
+            --quran-border: #e8d9b8;
+            --quran-gold: #b8922a;
+            --quran-gold-light: #e8c96a;
+            --quran-accent: #7a5c0e;
+            --quran-surface: #f5edd8;
+            --quran-text: #1e1a13;
+            --quran-text-muted: #7a6a52;
+            --quran-shadow: rgba(139, 105, 20, 0.12);
+            --quran-glow: rgba(200, 168, 76, 0.2);
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+            background-color: var(--quran-paper);
+            color: var(--quran-text);
+            transition: background-color 0.5s ease, color 0.5s ease;
+            overflow-x: hidden;
+        }
+
+        /* Islamic Geometric Pattern Background */
+        .islamic-pattern {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: 
+                radial-gradient(circle at 25% 25%, var(--quran-gold) 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, var(--quran-gold) 1.5px, transparent 1.5px),
+                radial-gradient(circle at 50% 50%, var(--quran-gold) 1px, transparent 1px);
+            background-size: 60px 60px, 60px 60px, 30px 30px;
+        }
+
+        .dark .islamic-pattern {
+            opacity: 0.05;
+        }
+
+        /* Header gradient */
+        .header-gradient {
+            background: linear-gradient(160deg, 
+                rgba(255, 252, 240, 0.97) 0%,
+                rgba(255, 248, 225, 0.98) 50%,
+                rgba(255, 252, 240, 0.97) 100%);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 2px 20px var(--quran-shadow);
+        }
+
+        /* Gold ornamental line */
+        .gold-line {
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                var(--quran-gold) 20%, 
+                var(--quran-gold-light) 50%, 
+                var(--quran-gold) 80%, 
+                transparent);
+        }
+
+        /* SVG Ayah interactions */
+        .ayahPolygon {
+            fill: transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .ayahPolygon:hover {
+            fill: var(--quran-highlight-muted);
+            fill-opacity: 0.5;
+        }
+
+        .ayahPolygon.active {
+            fill: var(--quran-highlight);
+            fill-opacity: 0.35;
+            animation: pulseHighlight 2s ease-in-out infinite;
+        }
+
+        .ayahPolygon.playing {
+            fill: var(--quran-highlight);
+            fill-opacity: 0.45;
+            animation: pulseHighlight 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseHighlight {
+            0%, 100% { fill-opacity: 0.35; }
+            50% { fill-opacity: 0.55; }
+        }
+
+        /* Skeleton Loader */
+        .skeleton {
+            background: linear-gradient(90deg, 
+                var(--quran-surface) 25%, 
+                var(--quran-border) 50%, 
+                var(--quran-surface) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Islamic loading spinner */
+        .islamic-spinner {
+            width: 60px;
+            height: 60px;
+            position: relative;
+        }
+
+        .islamic-spinner::before,
+        .islamic-spinner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 3px solid transparent;
+            border-radius: 50%;
+        }
+
+        .islamic-spinner::before {
+            border-top-color: var(--quran-gold);
+            border-bottom-color: var(--quran-gold);
+            animation: spinCW 1.2s linear infinite;
+        }
+
+        .islamic-spinner::after {
+            inset: 6px;
+            border-left-color: var(--quran-highlight);
+            border-right-color: var(--quran-highlight);
+            animation: spinCCW 1s linear infinite;
+        }
+
+        @keyframes spinCW { to { transform: rotate(360deg); } }
+        @keyframes spinCCW { to { transform: rotate(-360deg); } }
+
+        /* Page transitions */
+        .page-enter {
+            animation: pageEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes pageEnter {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Bottom Sheet */
+        .bottom-sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .bottom-sheet-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 101;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .bottom-sheet.active {
+            transform: translateY(0);
+        }
+
+        .bottom-sheet-handle {
+            width: 40px;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--quran-border);
+            margin: 8px auto 4px;
+        }
+
+        /* Drawer */
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 80;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .drawer-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: min(380px, 85vw);
+            z-index: 81;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            overflow-y: auto;
+            background: var(--quran-paper);
+            box-shadow: -4px 0 30px rgba(0,0,0,0.15);
+        }
+
+        .drawer.active {
+            transform: translateX(0);
+        }
+
+        /* Audio Player */
+        .audio-player-bar {
+            position: fixed;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            z-index: 45;
+            transform: translateY(200%);
+            transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        .audio-player-bar.active {
+            transform: translateY(0);
+        }
+
+        .audio-player-inner {
+            background: rgba(255, 252, 240, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(200, 168, 76, 0.25);
+            border-radius: 20px;
+            padding: 10px 16px 12px;
+            box-shadow: 0 -4px 30px rgba(139, 105, 20, 0.12), 0 8px 32px rgba(0,0,0,0.05);
+        }
+
+        .audio-progress-bar {
+            height: 4px;
+            background: rgba(200, 168, 76, 0.2);
+            border-radius: 4px;
+            overflow: visible;
+            cursor: pointer;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .audio-progress-bar:hover .audio-progress-fill {
+            height: 6px;
+            margin-top: -1px;
+        }
+
+        .audio-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--quran-accent), var(--quran-gold), var(--quran-gold-light));
+            border-radius: 4px;
+            transition: width 0.1s linear, height 0.15s ease;
+            width: 0%;
+            position: relative;
+        }
+
+        .audio-progress-fill::after {
+            content: '';
+            position: absolute;
+            right: -5px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--quran-gold);
+            box-shadow: 0 0 6px var(--quran-glow);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .audio-progress-bar:hover .audio-progress-fill::after {
+            opacity: 1;
+        }
+
+        /* Action Button Styles */
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 14px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 16px;
+            background: transparent;
+            color: var(--quran-text);
+        }
+
+        .action-btn:hover {
+            background: var(--quran-surface);
+        }
+
+        .action-btn:active {
+            transform: scale(0.98);
+        }
+
+        .action-btn .icon-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Surah list item */
+        .surah-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            width: 100%;
+            background: transparent;
+            color: var(--quran-text);
+            font-family: inherit;
+        }
+
+        .surah-item:hover {
+            background: var(--quran-surface);
+        }
+
+        .surah-item:active {
+            transform: scale(0.98);
+        }
+
+        .surah-number {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            transform: rotate(45deg);
+            border: 2px solid var(--quran-gold);
+            color: var(--quran-gold);
+            flex-shrink: 0;
+        }
+
+        .surah-number span {
+            transform: rotate(-45deg);
+        }
+
+        /* Bookmark item */
+        .bookmark-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--quran-surface);
+            margin-bottom: 8px;
+        }
+
+        .bookmark-item:hover {
+            box-shadow: 0 2px 12px rgba(201, 168, 76, 0.15);
+        }
+
+        /* Footer nav */
+        .footer-nav {
+            background: var(--quran-paper);
+            border-top: 1px solid var(--quran-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* Nav button */
+        .nav-btn {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: var(--quran-text);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--quran-surface);
+            color: var(--quran-gold);
+        }
+
+        .nav-btn:active:not(:disabled) {
+            transform: scale(0.92);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        /* Header icon buttons */
+        .header-icon-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: var(--quran-text-muted);
+        }
+
+        .header-icon-btn:hover {
+            background: var(--quran-surface);
+            color: var(--quran-gold);
+        }
+
+        .header-icon-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* Audio control button */
+        .audio-ctrl-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            cursor: pointer;
+            background: transparent;
+            color: var(--quran-text-muted);
+        }
+
+        .audio-ctrl-btn:hover {
+            background: rgba(200, 168, 76, 0.1);
+            color: var(--quran-gold);
+            transform: scale(1.05);
+        }
+
+        .audio-ctrl-btn:active {
+            transform: scale(0.92);
+        }
+
+        .audio-ctrl-btn.primary {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--quran-accent) 0%, var(--quran-gold) 60%, var(--quran-gold-light) 100%);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(139, 105, 20, 0.35), 0 0 0 0 rgba(200, 168, 76, 0.3);
+            animation: none;
+        }
+
+        .audio-ctrl-btn.primary:hover {
+            box-shadow: 0 6px 20px rgba(139, 105, 20, 0.45);
+            color: #fff;
+            transform: scale(1.08);
+        }
+
+        .audio-ctrl-btn.primary.playing-pulse {
+            animation: audioButtonPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes audioButtonPulse {
+            0%, 100% { box-shadow: 0 4px 14px rgba(139, 105, 20, 0.35), 0 0 0 0 rgba(200, 168, 76, 0.3); }
+            50% { box-shadow: 0 4px 14px rgba(139, 105, 20, 0.35), 0 0 0 8px rgba(200, 168, 76, 0); }
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            background: var(--quran-text);
+            color: var(--quran-paper);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Hide number input arrows */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        /* Scrollbar styling */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--quran-border);
+            border-radius: 4px;
+        }
+
+
+
+        /* Page container transitions */
+        .quran-page-svg {
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.08);
+            border: 1px solid var(--quran-border);
+            background: #fff;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .quran-page-svg svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Search input */
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 42px;
+            border-radius: 12px;
+            border: 1px solid var(--quran-border);
+            background: var(--quran-surface);
+            color: var(--quran-text);
+            font-family: inherit;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--quran-gold);
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+        }
+
+        .search-input::placeholder {
+            color: var(--quran-text-muted);
+        }
+
+        /* Repeat badge */
+        .repeat-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 6px;
+            background: var(--quran-gold);
+            color: #fff;
+            position: absolute;
+            top: -4px;
+            right: -4px;
+        }
+
+        /* ============ DESKTOP TWO-PAGE SPREAD ============ */
+        @media (min-width: 1100px) {
+            .two-page-spread {
+                display: flex;
+                flex-direction: row-reverse;
+                gap: 12px;
+                align-items: flex-start;
+                justify-content: center;
+                width: 100%;
+                max-width: 1400px;
+            }
+
+            .two-page-spread .quran-page-svg {
+                flex: 1;
+                max-width: 48%;
+            }
+
+            .two-page-spread .page-divider {
+                width: 3px;
+                min-height: 500px;
+                align-self: stretch;
+                background: linear-gradient(180deg,
+                    transparent 0%,
+                    var(--quran-gold) 15%,
+                    var(--quran-gold-light) 50%,
+                    var(--quran-gold) 85%,
+                    transparent 100%);
+                border-radius: 2px;
+                opacity: 0.5;
+                flex-shrink: 0;
+            }
+
+            .single-page-mode .quran-page-svg {
+                max-width: 700px;
+            }
+
+            main.desktop-main {
+                max-width: 1500px;
+            }
+
+            #page-container {
+                max-width: 1400px !important;
+            }
+
+            /* Desktop footer: more compact */
+            .footer-nav {
+                padding: 6px 12px;
+            }
+        }
+
+        /* ============ AUTO-HIDE HEADER ============ */
+        .header-hidden {
+            transform: translateY(-100%);
+        }
+
+        #main-header {
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                        background-color 0.5s ease;
+        }
+
+        /* ============ IMPROVED AYAH POLYGON FEEDBACK ============ */
+        .ayahPolygon {
+            fill: transparent;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            pointer-events: auto;
+            stroke: transparent;
+            stroke-width: 0;
+        }
+
+        .ayahPolygon:hover {
+            fill: var(--quran-highlight-muted);
+            fill-opacity: 0.5;
+            stroke: var(--quran-gold);
+            stroke-width: 0.8;
+            stroke-opacity: 0.5;
+        }
+
+        .ayahPolygon.active {
+            fill: var(--quran-highlight);
+            fill-opacity: 0.35;
+            stroke: var(--quran-gold);
+            stroke-width: 1;
+            stroke-opacity: 0.7;
+            animation: pulseHighlight 2s ease-in-out infinite;
+        }
+
+        .ayahPolygon.playing {
+            fill: var(--quran-highlight);
+            fill-opacity: 0.45;
+            stroke: var(--quran-gold);
+            stroke-width: 1.2;
+            stroke-opacity: 0.9;
+            animation: pulseHighlight 1.5s ease-in-out infinite;
+        }
+
+        /* ============ VERSE CONFIRMATION TOOLTIP ============ */
+        .verse-tooltip {
+            position: fixed;
+            z-index: 200;
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            background: var(--quran-text);
+            color: var(--quran-paper);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.2s, transform 0.2s;
+            white-space: nowrap;
+        }
+
+        .verse-tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ============ JUZ NAVIGATION DROPDOWN ============ */
+        .juz-dropdown {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(360px, 90vw);
+            max-height: 350px;
+            overflow-y: auto;
+            background: var(--quran-paper);
+            border: 1px solid var(--quran-border);
+            border-radius: 16px;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+            padding: 8px;
+            margin-bottom: 8px;
+            z-index: 60;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(-50%) translateY(10px);
+            transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        }
+
+        .juz-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .juz-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: none;
+            width: 100%;
+            background: transparent;
+            color: var(--quran-text);
+            font-family: inherit;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .juz-item:hover {
+            background: var(--quran-surface);
+        }
+
+        .juz-item.current {
+            background: rgba(201, 168, 76, 0.12);
+            color: var(--quran-gold);
+        }
+
+        .juz-num {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 8px;
+            background: var(--quran-surface);
+            color: var(--quran-gold);
+            flex-shrink: 0;
+        }
+
+        .juz-item.current .juz-num {
+            background: var(--quran-gold);
+            color: #fff;
+        }
+
+        /* ============ SELECTED VERSE INFO BOX ============ */
+        .selected-verse-bar {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            padding: 6px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 45;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, var(--quran-gold), var(--quran-highlight));
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(201, 168, 76, 0.3);
+            white-space: nowrap;
+        }
+
+        .selected-verse-bar.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center relative">
+    <!-- Islamic Pattern Background -->
+    <div class="islamic-pattern"></div>
+
+    <!-- Header -->
+    <header id="main-header" class="w-full header-gradient sticky top-0 z-40">
+        <div class="gold-line"></div>
+        <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 py-2.5">
+            <!-- Right: Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, var(--quran-accent) 0%, var(--quran-gold) 60%, var(--quran-gold-light) 100%); box-shadow: 0 3px 10px rgba(139,105,20,0.25);">
+                    <i data-lucide="book-open" class="w-4 h-4 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold leading-tight" style="color: var(--quran-text); letter-spacing: -0.01em;">مصحف ورش الرقمي</h1>
+                    <p class="text-xs hidden sm:block" style="color: var(--quran-text-muted);">رواية ورش عن نافع المدني</p>
+                </div>
+            </div>
+
+            <!-- Left: Action Buttons -->
+            <div class="flex items-center gap-1">
+                <button id="btn-bookmarks" class="header-icon-btn" title="الإشارات المرجعية (B)">
+                    <i data-lucide="bookmark" class="w-5 h-5"></i>
+                </button>
+                <button id="btn-index" class="header-icon-btn" title="فهرس السور (F)">
+                    <i data-lucide="list" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        <div class="gold-line"></div>
+    </header>
+
+    <!-- Page Info Bar -->
+    <div id="page-info-bar" class="w-full max-w-screen-xl mx-auto px-4 py-2 flex items-center justify-between text-sm" style="color: var(--quran-text-muted);">
+        <span id="info-surah-name">سورة الفاتحة</span>
+        <span id="info-juz-hizb"></span>
+        <span id="info-juz-number">الجزء ١</span>
+    </div>
+
+    <!-- Selected Verse Info Bar -->
+    <div id="selected-verse-bar" class="selected-verse-bar"></div>
+
+    <!-- Verse Tooltip -->
+    <div id="verse-tooltip" class="verse-tooltip"></div>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-screen-xl px-4 pb-36 flex justify-center items-start relative z-10 desktop-main">
+        <div id="page-container" class="w-full max-w-[700px] flex justify-center">
+            <!-- SVG injected here -->
+            <div id="loader" class="flex flex-col items-center justify-center min-h-[60vh] gap-6 w-full">
+                <div class="islamic-spinner"></div>
+                <p class="text-lg font-semibold animate-pulse" style="color: var(--quran-text-muted);">جاري التحميل...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Audio Player Bar -->
+    <div id="audio-player" class="audio-player-bar">
+        <div class="mx-auto max-w-screen-md px-3">
+            <div class="audio-player-inner">
+                <!-- Progress Bar -->
+                <div class="audio-progress-bar" id="audio-progress-bar">
+                    <div class="audio-progress-fill" id="audio-progress-fill"></div>
+                </div>
+                <!-- Controls -->
+                <div class="flex items-center gap-2">
+                    <!-- Buttons -->
+                    <div class="flex items-center gap-1">
+                        <button class="audio-ctrl-btn relative" id="btn-repeat" title="تكرار الآية">
+                            <i data-lucide="repeat" class="w-4 h-4"></i>
+                            <span class="repeat-badge hidden" id="repeat-badge">١</span>
+                        </button>
+                        <button class="audio-ctrl-btn" id="btn-audio-prev" title="الآية السابقة">
+                            <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                        </button>
+                        <button class="audio-ctrl-btn primary" id="btn-audio-play" title="تشغيل/إيقاف (Space)">
+                            <i data-lucide="play" class="w-5 h-5" id="audio-play-icon"></i>
+                        </button>
+                        <button class="audio-ctrl-btn" id="btn-audio-next" title="الآية التالية">
+                            <i data-lucide="skip-back" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <!-- Ayah Info -->
+                    <div class="flex-1 min-w-0 mx-1">
+                        <p class="text-sm font-bold truncate text-center" style="color: var(--quran-text);" id="audio-ayah-info">—</p>
+                    </div>
+                    <!-- Close -->
+                    <button class="audio-ctrl-btn" id="btn-audio-close" title="إغلاق المشغل" style="flex-shrink:0;">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Navigation -->
+    <footer class="footer-nav fixed bottom-0 left-0 right-0 z-50" style="border-color: var(--quran-border); padding: 8px 12px 10px;">
+        <div class="max-w-screen-md mx-auto flex items-center justify-between gap-2">
+            <button id="next-btn" class="nav-btn" title="الصفحة التالية (→)">
+                <i data-lucide="chevron-right" class="w-6 h-6"></i>
+            </button>
+
+            <div class="flex items-center gap-1.5 flex-1 justify-center relative">
+                <!-- Juz Dropdown -->
+                <div id="juz-dropdown" class="juz-dropdown custom-scrollbar">
+                    <!-- Populated by JS -->
+                </div>
+
+                <button id="btn-juz-nav" class="nav-btn" title="التنقل بالجزء" style="width: auto; padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; color: var(--quran-gold); background: rgba(184,146,42,0.08);">
+                    <i data-lucide="layers" class="w-3.5 h-3.5" style="margin-left: 3px;"></i>
+                    <span id="juz-nav-label" class="hidden sm:inline">الجزء</span>
+                </button>
+
+                <div class="flex items-center gap-1">
+                    <span class="hidden sm:inline text-sm font-medium" style="color: var(--quran-text-muted);">ص</span>
+                    <input id="page-input" type="number" min="1" max="604" value="1"
+                        class="w-14 sm:w-16 text-center py-1 px-1.5 rounded-xl font-bold text-base outline-none transition-all"
+                        style="border: 1.5px solid var(--quran-border); background: var(--quran-surface); color: var(--quran-text);">
+                    <span class="text-sm font-medium" style="color: var(--quran-text-muted);">/ ٦٠٤</span>
+                </div>
+            </div>
+
+            <button id="prev-btn" class="nav-btn" title="الصفحة السابقة (←)">
+                <i data-lucide="chevron-left" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Bottom Sheet Overlay -->
+    <div id="bottom-sheet-overlay" class="bottom-sheet-overlay"></div>
+
+    <!-- Bottom Sheet (Verse Actions) -->
+    <div id="verse-bottom-sheet" class="bottom-sheet" style="background: var(--quran-paper); border-radius: 24px 24px 0 0; border-top: 1px solid var(--quran-border);">
+        <div class="bottom-sheet-handle"></div>
+        
+        <!-- Verse Info Header -->
+        <div class="px-5 pt-2 pb-4">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--quran-gold), var(--quran-highlight)); color: #fff; font-size: 14px; font-weight: 700;">
+                    <span id="sheet-ayah-num"></span>
+                </div>
+                <div>
+                    <p class="font-bold text-base" style="color: var(--quran-text);" id="sheet-surah-name"></p>
+                    <p class="text-sm" style="color: var(--quran-text-muted);" id="sheet-verse-detail"></p>
+                </div>
+            </div>
+
+            <div class="w-full h-px" style="background: var(--quran-border);"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="px-4 pb-8 space-y-1">
+            <button class="action-btn" id="action-listen">
+                <div class="icon-wrap" style="background: rgba(184, 146, 42, 0.12);">
+                    <i data-lucide="volume-2" class="w-5 h-5" style="color: var(--quran-gold);"></i>
+                </div>
+                <div class="text-right">
+                    <p class="font-semibold text-base">استماع للآية</p>
+                    <p class="text-xs" style="color: var(--quran-text-muted);">القارئ إبراهيم الدوسري - رواية ورش</p>
+                </div>
+            </button>
+
+            <button class="action-btn" id="action-listen-auto">
+                <div class="icon-wrap" style="background: rgba(14, 165, 233, 0.1);">
+                    <i data-lucide="play-circle" class="w-5 h-5" style="color: #0ea5e9;"></i>
+                </div>
+                <div class="text-right">
+                    <p class="font-semibold text-base">تشغيل الآية ومتابعة القراءة</p>
+                    <p class="text-xs" style="color: var(--quran-text-muted);">تشغيل متواصل انطلاقاً من هذه الآية</p>
+                </div>
+            </button>
+
+            <button class="action-btn" id="action-bookmark">
+                <div class="icon-wrap" style="background: rgba(239, 68, 68, 0.1);">
+                    <i data-lucide="bookmark-plus" class="w-5 h-5" style="color: #ef4444;"></i>
+                </div>
+                <div class="text-right">
+                    <p class="font-semibold text-base" id="bookmark-action-text">إضافة إشارة مرجعية</p>
+                    <p class="text-xs" style="color: var(--quran-text-muted);">حفظ هذا الموضع للرجوع إليه</p>
+                </div>
+            </button>
+
+            <button class="action-btn" id="action-copy">
+                <div class="icon-wrap" style="background: rgba(16, 185, 129, 0.1);">
+                    <i data-lucide="copy" class="w-5 h-5" style="color: #10b981;"></i>
+                </div>
+                <div class="text-right">
+                    <p class="font-semibold text-base">نسخ معلومات الآية</p>
+                    <p class="text-xs" style="color: var(--quran-text-muted);">نسخ اسم السورة ورقم الآية</p>
+                </div>
+            </button>
+
+            <button class="action-btn" id="action-share">
+                <div class="icon-wrap" style="background: rgba(139, 92, 246, 0.1);">
+                    <i data-lucide="image" class="w-5 h-5" style="color: #8b5cf6;"></i>
+                </div>
+                <div class="text-right">
+                    <p class="font-semibold text-base">مشاركة كصورة</p>
+                    <p class="text-xs" style="color: var(--quran-text-muted);">إنشاء بطاقة جميلة للآية ومشاركتها</p>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Drawer Overlay -->
+    <div id="drawer-overlay" class="drawer-overlay"></div>
+
+    <!-- Surah Index Drawer -->
+    <div id="surah-drawer" class="drawer custom-scrollbar" style="background: var(--quran-paper);">
+        <div class="sticky top-0 z-10 p-4 pb-2" style="background: var(--quran-paper); border-bottom: 1px solid var(--quran-border);">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-bold" style="color: var(--quran-text);">فهرس السور</h2>
+                <button id="close-surah-drawer" class="header-icon-btn">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2" style="color: var(--quran-text-muted);"></i>
+                <input id="surah-search" type="text" placeholder="ابحث عن سورة..." class="search-input">
+            </div>
+        </div>
+        <div id="surah-list" class="p-3 space-y-1">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- Bookmarks Drawer -->
+    <div id="bookmarks-drawer" class="drawer custom-scrollbar" style="background: var(--quran-paper);">
+        <div class="sticky top-0 z-10 p-4 pb-3" style="background: var(--quran-paper); border-bottom: 1px solid var(--quran-border);">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold" style="color: var(--quran-text);">الإشارات المرجعية</h2>
+                <button id="close-bookmarks-drawer" class="header-icon-btn">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        <div id="bookmarks-list" class="p-4">
+            <!-- Populated by JS -->
+        </div>
+        <div id="bookmarks-empty" class="flex flex-col items-center justify-center py-16 px-6 text-center hidden">
+            <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4" style="background: var(--quran-surface);">
+                <i data-lucide="bookmark" class="w-7 h-7" style="color: var(--quran-text-muted);"></i>
+            </div>
+            <p class="font-semibold text-base mb-1" style="color: var(--quran-text);">لا توجد إشارات مرجعية</p>
+            <p class="text-sm" style="color: var(--quran-text-muted);">انقر على أي آية ثم اختر "إضافة إشارة مرجعية"</p>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Share Canvas (hidden) -->
+    <canvas id="share-canvas" style="display:none;"></canvas>
+
+    <!-- App Logic -->
+    <script src="app.js" type="module"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker Registered'))
+                    .catch(err => console.log('Service Worker Failed', err));
+            });
+        }
+    </script>
+</body>
+</html>
