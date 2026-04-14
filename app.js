@@ -582,21 +582,9 @@ async function actionShare() {
         ctx.fillStyle = lineGrad;
         ctx.fillRect(80, H - 132, W - 160, 2);
 
-        // Bismillah-style ornament top
-        ctx.fillStyle = 'rgba(184, 146, 42, 0.15)';
-        ctx.beginPath();
-        ctx.arc(W / 2, 95, 32, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(184, 146, 42, 0.5)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // App name (top)
-        ctx.fillStyle = '#7a5c0e';
-        ctx.font = 'bold 32px "Amiri", "Noto Naskh Arabic", serif';
+        // Text settings
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('مصحف ورش الرقمي', W / 2, 95);
 
         // Surah name - large
         ctx.fillStyle = '#1e1a13';
@@ -630,7 +618,7 @@ async function actionShare() {
             // Re-adjust page info dynamically based on text height
             ctx.fillStyle = '#7a6a52';
             ctx.font = '30px "Amiri", "Noto Naskh Arabic", serif';
-            ctx.fillText(`صفحة ${toArabicNum(currentPage)} | رواية ورش عن نافع`, W / 2, Math.max(760, textY + 120));
+            ctx.fillText(`صفحة ${toArabicNum(currentPage)}`, W / 2, Math.max(760, textY + 120));
         } else {
             // Fallback if no text could be loaded
             ctx.fillStyle = '#4a3c20';
@@ -639,7 +627,7 @@ async function actionShare() {
             
             ctx.fillStyle = '#7a6a52';
             ctx.font = '30px "Amiri", "Noto Naskh Arabic", serif';
-            ctx.fillText(`صفحة ${toArabicNum(currentPage)} | رواية ورش عن نافع`, W / 2, 660);
+            ctx.fillText(`صفحة ${toArabicNum(currentPage)}`, W / 2, 660);
         }
 
         // Bottom ornament
